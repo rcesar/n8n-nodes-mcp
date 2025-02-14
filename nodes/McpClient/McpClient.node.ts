@@ -23,7 +23,9 @@ export class McpClient implements INodeType {
 		defaults: {
 			name: 'MCP Client',
 		},
+		// @ts-ignore - node-class-description-outputs-wrong
 		inputs: [{ type: NodeConnectionType.Main }],
+		// @ts-ignore - node-class-description-outputs-wrong
 		outputs: [{ type: NodeConnectionType.Main }],
 		credentials: [
 			{
