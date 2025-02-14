@@ -39,28 +39,16 @@ export class McpClient implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'List Resources',
-						value: 'listResources',
-						description: 'Get a list of available resources',
-						action: 'List available resources',
-					},
-					{
-						name: 'Read Resource',
-						value: 'readResource',
-						description: 'Read a specific resource by URI',
-						action: 'Read a resource',
-					},
-					{
-						name: 'List Tools',
-						value: 'listTools',
-						description: 'Get available tools',
-						action: 'List available tools',
-					},
-					{
 						name: 'Execute Tool',
 						value: 'executeTool',
 						description: 'Execute a specific tool',
 						action: 'Execute a tool',
+					},
+					{
+						name: 'Get Prompt',
+						value: 'getPrompt',
+						description: 'Get a specific prompt template',
+						action: 'Get a prompt template',
 					},
 					{
 						name: 'List Prompts',
@@ -69,10 +57,22 @@ export class McpClient implements INodeType {
 						action: 'List available prompts',
 					},
 					{
-						name: 'Get Prompt',
-						value: 'getPrompt',
-						description: 'Get a specific prompt template',
-						action: 'Get a prompt template',
+						name: 'List Resources',
+						value: 'listResources',
+						description: 'Get a list of available resources',
+						action: 'List available resources',
+					},
+					{
+						name: 'List Tools',
+						value: 'listTools',
+						description: 'Get available tools',
+						action: 'List available tools',
+					},
+					{
+						name: 'Read Resource',
+						value: 'readResource',
+						description: 'Read a specific resource by URI',
+						action: 'Read a resource',
 					},
 				],
 				default: 'listTools',

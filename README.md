@@ -31,12 +31,12 @@ The MCP Client node supports the following operations:
 
 ![MCP Client Operations](./assets/operations.png)
 
-- **List Resources** - Get a list of available resources from the MCP server
-- **Read Resource** - Read a specific resource by URI
-- **List Tools** - Get a list of available tools
 - **Execute Tool** - Execute a specific tool with parameters
-- **List Prompts** - Get a list of available prompts
 - **Get Prompt** - Get a specific prompt template
+- **List Prompts** - Get a list of available prompts
+- **List Resources** - Get a list of available resources from the MCP server
+- **List Tools** - Get a list of available tools
+- **Read Resource** - Read a specific resource by URI
 
 ### Example: List Tools Operation
 
