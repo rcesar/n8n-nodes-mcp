@@ -27,6 +27,7 @@ export class McpClient implements INodeType {
 		inputs: [{ type: NodeConnectionType.Main }],
 		// @ts-ignore - node-class-description-outputs-wrong
 		outputs: [{ type: NodeConnectionType.Main }],
+		usableAsTool: true,
 		credentials: [
 			{
 				name: 'mcpClientApi',
@@ -184,9 +185,11 @@ export class McpClient implements INodeType {
 
 				case 'listTools': {
 					const rawTools = await client.listTools();
-					const tools = Array.isArray(rawTools) ? rawTools :
-						Array.isArray(rawTools?.tools) ? rawTools.tools :
-						Object.values(rawTools?.tools || {});
+					const tools = Array.isArray(rawTools)
+						? rawTools
+						: Array.isArray(rawTools?.tools)
+						? rawTools.tools
+						: Object.values(rawTools?.tools || {});
 
 					if (!tools.length) {
 						throw new NodeOperationError(this.getNode(), 'No tools found from MCP client');
@@ -245,7 +248,7 @@ export class McpClient implements INodeType {
 										},
 										{},
 									),
-								)
+							  )
 							: z.object({});
 
 						return new DynamicStructuredTool({

@@ -9,6 +9,7 @@ MCP is a protocol that enables AI models to interact with external tools and dat
 [Installation](#installation)  
 [Credentials](#credentials)  
 [Operations](#operations)  
+[Using as a Tool](#using-as-a-tool)  
 [Compatibility](#compatibility)  
 [Resources](#resources)  
 
@@ -43,6 +44,49 @@ The MCP Client node supports the following operations:
 ![List Tools Example](./assets/listTools.png)
 
 The List Tools operation returns all available tools from the MCP server, including their names, descriptions, and parameter schemas.
+
+### Example: Execute Tool Operation
+
+![Execute Tool Example](./assets/executeTool.png)
+
+The Execute Tool operation allows you to execute a specific tool with parameters. Make sure to select the tool you want to execute from the dropdown menu.
+
+## Using as a Tool
+
+This node can be used as a tool in n8n AI Agents. To enable community nodes as tools, you need to set the `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE` environment variable to `true`.
+
+### Setting the Environment Variable
+
+**If you're using a bash/zsh shell:**
+```bash
+export N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+n8n start
+```
+
+**If you're using Docker:**
+Add to your docker-compose.yml file:
+```yaml
+environment:
+  - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+**If you're using the desktop app:**
+Create a `.env` file in the n8n directory:
+```
+N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+**If you want to set it permanently on Mac/Linux:**
+Add to your `~/.zshrc` or `~/.bash_profile`:
+```bash
+export N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+Example of an AI Agent workflow results:
+
+![AI Agent Example](./assets/executeToolResult.png)
+
+After setting this environment variable and restarting n8n, your MCP Client node will be available as a tool in AI Agent nodes.
 
 ## Compatibility
 
