@@ -35,7 +35,7 @@ The MCP Client node supports passing environment variables to the MCP server in 
 
 You can add environment variables directly in the credentials configuration:
 
-![Environment Variables in Credentials](./assets/env-variables.png)
+![Environment Variables in Credentials](./assets/credentialsEnvs.png)
 
 This method is useful for individual setups and testing. The values are stored securely as credentials in n8n.
 
@@ -70,7 +70,7 @@ This example shows how to set up and use the Brave Search MCP server:
 2. Configure MCP Client credentials:
    - **Command**: `npx`
    - **Arguments**: `-y @modelcontextprotocol/server-brave-search`
-   - **Environment Variables**: Add a variable with Name=`BRAVE_API_KEY` and Value=`your-api-key`
+   - **Environment Variables**: `BRAVE_API_KEY=your-api-key` Add a variables (space comma or newline separated)
 
 3. Create a workflow that uses the MCP Client node:
    - Add an MCP Client node
@@ -80,7 +80,7 @@ This example shows how to set up and use the Brave Search MCP server:
    - Choose the "brave_search" tool
    - Set Parameters to: `{"query": "latest AI news"}`
 
-![Brave Search Example](./assets/brave-search-example.png)
+![Brave Search Example](./assets/braveSearchExample.png)
 
 The node will execute the search and return the results in the output.
 
@@ -135,7 +135,7 @@ services:
    - Configure different MCP Client nodes with different credentials
    - Create a prompt that uses multiple data sources
 
-![Multi-Server Setup](./assets/multi-server-example.png)
+![Multi-Server Setup](./assets/multiServerExample.png)
 
 Example AI Agent prompt:
 ```
