@@ -148,11 +148,16 @@ export class McpClient implements INodeType {
 
 		try {
 			// Build environment variables object for MCP servers
-			const env: Record<string, string> = {};
+			const env: Record<string, string> = {
+				// Preserve the PATH environment variable to ensure commands can be found
+				PATH: process.env.PATH || '',
+			};
+
+			this.logger.debug(`Original PATH: ${process.env.PATH}`);
 
 			// Parse comma-separated environment variables from credentials
 			if (credentials.environments) {
-				const envPairs = (credentials.environments as string).split(',');
+				const envPairs = (credentials.environments as string).split(/[,\n\s]+/);
 				for (const pair of envPairs) {
 					const trimmedPair = pair.trim();
 					if (trimmedPair) {
@@ -182,8 +187,18 @@ export class McpClient implements INodeType {
 			const transport = new StdioClientTransport({
 				command: credentials.command as string,
 				args: (credentials.args as string)?.split(' ') || [],
-				env,
+				env: env, // Always pass the env with PATH preserved
 			});
+
+			// Use n8n's logger instead of console.log
+			this.logger.debug(
+				`Transport created for MCP client command: ${credentials.command}, PATH: ${env.PATH}`,
+			);
+
+			// Add error handling to transport
+			transport.onerror = (error) => {
+				throw new NodeOperationError(this.getNode(), `Transport error: ${error}`);
+			};
 
 			const client = new Client(
 				{
@@ -199,7 +214,16 @@ export class McpClient implements INodeType {
 				},
 			);
 
-			await client.connect(transport);
+			try {
+				await client.connect(transport);
+				this.logger.debug('Client connected to MCP server');
+			} catch (connectionError) {
+				this.logger.error(`MCP client connection error: ${(connectionError as Error).message}`);
+				throw new NodeOperationError(
+					this.getNode(),
+					`Failed to connect to MCP server: ${(connectionError as Error).message}`,
+				);
+			}
 
 			switch (operation) {
 				case 'listResources': {
@@ -325,16 +349,78 @@ export class McpClient implements INodeType {
 
 				case 'executeTool': {
 					const toolName = this.getNodeParameter('toolName', 0) as string;
-					const toolParams = JSON.parse(this.getNodeParameter('toolParameters', 0) as string);
+					let toolParams;
 
-					const result = await client.callTool({
-						name: toolName,
-						arguments: toolParams,
-					});
+					try {
+						const rawParams = this.getNodeParameter('toolParameters', 0) as string;
+						this.logger.debug(`Raw tool parameters: ${rawParams}`);
 
-					returnData.push({
-						json: { result },
-					});
+						// Handle empty parameters case
+						if (!rawParams || rawParams.trim() === '') {
+							toolParams = {};
+						} else {
+							toolParams = JSON.parse(rawParams);
+
+							// Ensure toolParams is an object
+							if (
+								typeof toolParams !== 'object' ||
+								toolParams === null ||
+								Array.isArray(toolParams)
+							) {
+								throw new NodeOperationError(
+									this.getNode(),
+									'Tool parameters must be a JSON object',
+								);
+							}
+						}
+					} catch (error) {
+						throw new NodeOperationError(
+							this.getNode(),
+							`Failed to parse tool parameters: ${
+								(error as Error).message
+							}. Make sure the parameters are valid JSON.`,
+						);
+					}
+
+					// Validate tool exists before executing
+					try {
+						const availableTools = await client.listTools();
+						const toolsList = Array.isArray(availableTools)
+							? availableTools
+							: Array.isArray(availableTools?.tools)
+							? availableTools.tools
+							: Object.values(availableTools?.tools || {});
+
+						const toolExists = toolsList.some((tool: any) => tool.name === toolName);
+
+						if (!toolExists) {
+							const availableToolNames = toolsList.map((t: any) => t.name).join(', ');
+							throw new NodeOperationError(
+								this.getNode(),
+								`Tool '${toolName}' does not exist. Available tools: ${availableToolNames}`,
+							);
+						}
+
+						this.logger.debug(
+							`Executing tool: ${toolName} with params: ${JSON.stringify(toolParams)}`,
+						);
+
+						const result = await client.callTool({
+							name: toolName,
+							arguments: toolParams,
+						});
+
+						this.logger.debug(`Tool executed successfully: ${JSON.stringify(result)}`);
+
+						returnData.push({
+							json: { result },
+						});
+					} catch (error) {
+						throw new NodeOperationError(
+							this.getNode(),
+							`Failed to execute tool '${toolName}': ${(error as Error).message}`,
+						);
+					}
 					break;
 				}
 
