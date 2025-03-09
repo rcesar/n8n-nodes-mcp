@@ -11,6 +11,11 @@ import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
+// Add Node.js process type declaration
+declare const process: {
+	env: Record<string, string | undefined>;
+};
+
 export class McpClient implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'MCP Client',
@@ -142,9 +147,42 @@ export class McpClient implements INodeType {
 		const credentials = await this.getCredentials('mcpClientApi');
 
 		try {
+			// Build environment variables object for MCP servers
+			const env: Record<string, string> = {};
+
+			// Parse comma-separated environment variables from credentials
+			if (credentials.environments) {
+				const envPairs = (credentials.environments as string).split(',');
+				for (const pair of envPairs) {
+					const trimmedPair = pair.trim();
+					if (trimmedPair) {
+						const equalsIndex = trimmedPair.indexOf('=');
+						if (equalsIndex > 0) {
+							const name = trimmedPair.substring(0, equalsIndex).trim();
+							const value = trimmedPair.substring(equalsIndex + 1).trim();
+							if (name && value !== undefined) {
+								env[name] = value;
+							}
+						}
+					}
+				}
+			}
+
+			// Process environment variables from Node.js
+			// This allows Docker environment variables to override credentials
+			for (const key in process.env) {
+				// Only pass through MCP-related environment variables
+				if (key.startsWith('MCP_') && process.env[key]) {
+					// Strip off the MCP_ prefix when passing to the MCP server
+					const envName = key.substring(4); // Remove 'MCP_'
+					env[envName] = process.env[key] as string;
+				}
+			}
+
 			const transport = new StdioClientTransport({
 				command: credentials.command as string,
 				args: (credentials.args as string)?.split(' ') || [],
+				env,
 			});
 
 			const client = new Client(
