@@ -1,2 +1,28 @@
+# Git, GitHub and CI/CD
+.git
+.github
+.gitignore
+
+# Source and dev files
+src
+tests
+.eslintrc
+.prettierrc
+tsconfig.json
+jest.config.js
+
+# Documentation
+docs
+*.md
+!README.md
+!LICENSE.md
+
+# Misc
 .DS_Store
-*.tsbuildinfo
+.vscode
+coverage
+node_modules
+
+# Assets not needed in package
+assets
+screenshots
