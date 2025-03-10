@@ -8,7 +8,7 @@ describe('McpClient Node', () => {
 	});
 
 	it('should have the correct node type', () => {
-		expect(mcpClient.description.name).toBe('MCP Client');
+		expect(mcpClient.description.name).toBe('mcpClient');
 	});
 
 	it('should have properties defined', () => {
