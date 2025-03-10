@@ -39,7 +39,7 @@ export class McpClient implements INodeType {
 				name: 'mcpClientApi',
 				required: false,
 				displayOptions: {
-					hide: {
+					show: {
 						connectionType: ['cmd'],
 					},
 				},
@@ -176,7 +176,15 @@ export class McpClient implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const returnData: INodeExecutionData[] = [];
 		const operation = this.getNodeParameter('operation', 0) as string;
-		const connectionType = this.getNodeParameter('connectionType', 0) as string;
+
+		// For backward compatibility - if connectionType isn't set, default to 'cmd'
+		let connectionType = 'cmd';
+		try {
+			connectionType = this.getNodeParameter('connectionType', 0) as string;
+		} catch (error) {
+			// If connectionType parameter doesn't exist, keep default 'cmd'
+			this.logger.debug('ConnectionType parameter not found, using default "cmd" transport');
+		}
 
 		try {
 			let transport: Transport;
@@ -437,26 +445,42 @@ export class McpClient implements INodeType {
 					let toolParams;
 
 					try {
-						const rawParams = this.getNodeParameter('toolParameters', 0) as string;
-						this.logger.debug(`Raw tool parameters: ${rawParams}`);
+						const rawParams = this.getNodeParameter('toolParameters', 0);
+						this.logger.debug(`Raw tool parameters: ${JSON.stringify(rawParams)}`);
 
-						// Handle empty parameters case
-						if (!rawParams || rawParams.trim() === '') {
+						// Handle different parameter types
+						if (rawParams === undefined || rawParams === null) {
+							// Handle null/undefined case
 							toolParams = {};
+						} else if (typeof rawParams === 'string') {
+							// Handle string input (typical direct node usage)
+							if (!rawParams || rawParams.trim() === '') {
+								toolParams = {};
+							} else {
+								toolParams = JSON.parse(rawParams);
+							}
+						} else if (typeof rawParams === 'object') {
+							// Handle object input (when used as a tool in AI Agent)
+							toolParams = rawParams;
 						} else {
-							toolParams = JSON.parse(rawParams);
-
-							// Ensure toolParams is an object
-							if (
-								typeof toolParams !== 'object' ||
-								toolParams === null ||
-								Array.isArray(toolParams)
-							) {
+							// Try to convert other types to object
+							try {
+								toolParams = JSON.parse(JSON.stringify(rawParams));
+							} catch (parseError) {
 								throw new NodeOperationError(
 									this.getNode(),
-									'Tool parameters must be a JSON object',
+									`Invalid parameter type: ${typeof rawParams}`,
 								);
 							}
+						}
+
+						// Ensure toolParams is an object
+						if (
+							typeof toolParams !== 'object' ||
+							toolParams === null ||
+							Array.isArray(toolParams)
+						) {
+							throw new NodeOperationError(this.getNode(), 'Tool parameters must be a JSON object');
 						}
 					} catch (error) {
 						throw new NodeOperationError(
