@@ -10,6 +10,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 
 // Add Node.js process type declaration
 declare const process: {
@@ -36,10 +37,41 @@ export class McpClient implements INodeType {
 		credentials: [
 			{
 				name: 'mcpClientApi',
-				required: true,
+				required: false,
+				displayOptions: {
+					show: {
+						connectionType: ['cmd'],
+					},
+				},
+			},
+			{
+				name: 'mcpClientSseApi',
+				required: false,
+				displayOptions: {
+					show: {
+						connectionType: ['sse'],
+					},
+				},
 			},
 		],
 		properties: [
+			{
+				displayName: 'Connection Type',
+				name: 'connectionType',
+				type: 'options',
+				options: [
+					{
+						name: 'Command Line (STDIO)',
+						value: 'cmd',
+					},
+					{
+						name: 'Server-Sent Events (SSE)',
+						value: 'sse',
+					},
+				],
+				default: 'cmd',
+				description: 'Choose the transport type to connect to MCP server',
+			},
 			{
 				displayName: 'Operation',
 				name: 'operation',
@@ -144,56 +176,117 @@ export class McpClient implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const returnData: INodeExecutionData[] = [];
 		const operation = this.getNodeParameter('operation', 0) as string;
-		const credentials = await this.getCredentials('mcpClientApi');
+
+		// For backward compatibility - if connectionType isn't set, default to 'cmd'
+		let connectionType = 'cmd';
+		try {
+			connectionType = this.getNodeParameter('connectionType', 0) as string;
+		} catch (error) {
+			// If connectionType parameter doesn't exist, keep default 'cmd'
+			this.logger.debug('ConnectionType parameter not found, using default "cmd" transport');
+		}
 
 		try {
-			// Build environment variables object for MCP servers
-			const env: Record<string, string> = {
-				// Preserve the PATH environment variable to ensure commands can be found
-				PATH: process.env.PATH || '',
-			};
+			let transport: Transport;
 
-			this.logger.debug(`Original PATH: ${process.env.PATH}`);
+			if (connectionType === 'sse') {
+				// Use SSE transport
+				const sseCredentials = await this.getCredentials('mcpClientSseApi');
 
-			// Parse comma-separated environment variables from credentials
-			if (credentials.environments) {
-				const envPairs = (credentials.environments as string).split(/[,\n\s]+/);
-				for (const pair of envPairs) {
-					const trimmedPair = pair.trim();
-					if (trimmedPair) {
-						const equalsIndex = trimmedPair.indexOf('=');
-						if (equalsIndex > 0) {
-							const name = trimmedPair.substring(0, equalsIndex).trim();
-							const value = trimmedPair.substring(equalsIndex + 1).trim();
-							if (name && value !== undefined) {
-								env[name] = value;
+				// Dynamically import the SSE client to avoid TypeScript errors
+				const { SSEClientTransport } = await import('@modelcontextprotocol/sdk/client/sse.js');
+
+				const sseUrl = sseCredentials.sseUrl as string;
+				const messagesPostEndpoint = (sseCredentials.messagesPostEndpoint as string) || '';
+
+				// Parse headers
+				const headers: Record<string, string> = {};
+				if (sseCredentials.headers) {
+					const headerLines = (sseCredentials.headers as string).split('\n');
+					for (const line of headerLines) {
+						const [name, value] = line.split(':', 2);
+						if (name && value) {
+							headers[name.trim()] = value.trim();
+						}
+					}
+				}
+
+				// Create SSE transport with dynamic import to avoid TypeScript errors
+				transport = new SSEClientTransport(
+					// @ts-ignore
+					new URL(sseUrl),
+					{
+						// @ts-ignore
+						eventSourceInit: { headers },
+						// @ts-ignore
+						requestInit: {
+							headers,
+							...(messagesPostEndpoint
+								? {
+										// @ts-ignore
+										endpoint: new URL(messagesPostEndpoint),
+								  }
+								: {}),
+						},
+					},
+				);
+
+				this.logger.debug(`Created SSE transport for MCP client URL: ${sseUrl}`);
+				if (messagesPostEndpoint) {
+					this.logger.debug(`Using custom POST endpoint: ${messagesPostEndpoint}`);
+				}
+			} else {
+				// Use stdio transport (default)
+				const cmdCredentials = await this.getCredentials('mcpClientApi');
+
+				// Build environment variables object for MCP servers
+				const env: Record<string, string> = {
+					// Preserve the PATH environment variable to ensure commands can be found
+					PATH: process.env.PATH || '',
+				};
+
+				this.logger.debug(`Original PATH: ${process.env.PATH}`);
+
+				// Parse comma-separated environment variables from credentials
+				if (cmdCredentials.environments) {
+					const envPairs = (cmdCredentials.environments as string).split(/[,\n\s]+/);
+					for (const pair of envPairs) {
+						const trimmedPair = pair.trim();
+						if (trimmedPair) {
+							const equalsIndex = trimmedPair.indexOf('=');
+							if (equalsIndex > 0) {
+								const name = trimmedPair.substring(0, equalsIndex).trim();
+								const value = trimmedPair.substring(equalsIndex + 1).trim();
+								if (name && value !== undefined) {
+									env[name] = value;
+								}
 							}
 						}
 					}
 				}
-			}
 
-			// Process environment variables from Node.js
-			// This allows Docker environment variables to override credentials
-			for (const key in process.env) {
-				// Only pass through MCP-related environment variables
-				if (key.startsWith('MCP_') && process.env[key]) {
-					// Strip off the MCP_ prefix when passing to the MCP server
-					const envName = key.substring(4); // Remove 'MCP_'
-					env[envName] = process.env[key] as string;
+				// Process environment variables from Node.js
+				// This allows Docker environment variables to override credentials
+				for (const key in process.env) {
+					// Only pass through MCP-related environment variables
+					if (key.startsWith('MCP_') && process.env[key]) {
+						// Strip off the MCP_ prefix when passing to the MCP server
+						const envName = key.substring(4); // Remove 'MCP_'
+						env[envName] = process.env[key] as string;
+					}
 				}
+
+				transport = new StdioClientTransport({
+					command: cmdCredentials.command as string,
+					args: (cmdCredentials.args as string)?.split(' ') || [],
+					env: env, // Always pass the env with PATH preserved
+				});
+
+				// Use n8n's logger instead of console.log
+				this.logger.debug(
+					`Transport created for MCP client command: ${cmdCredentials.command}, PATH: ${env.PATH}`,
+				);
 			}
-
-			const transport = new StdioClientTransport({
-				command: credentials.command as string,
-				args: (credentials.args as string)?.split(' ') || [],
-				env: env, // Always pass the env with PATH preserved
-			});
-
-			// Use n8n's logger instead of console.log
-			this.logger.debug(
-				`Transport created for MCP client command: ${credentials.command}, PATH: ${env.PATH}`,
-			);
 
 			// Add error handling to transport
 			transport.onerror = (error) => {
@@ -352,26 +445,42 @@ export class McpClient implements INodeType {
 					let toolParams;
 
 					try {
-						const rawParams = this.getNodeParameter('toolParameters', 0) as string;
-						this.logger.debug(`Raw tool parameters: ${rawParams}`);
+						const rawParams = this.getNodeParameter('toolParameters', 0);
+						this.logger.debug(`Raw tool parameters: ${JSON.stringify(rawParams)}`);
 
-						// Handle empty parameters case
-						if (!rawParams || rawParams.trim() === '') {
+						// Handle different parameter types
+						if (rawParams === undefined || rawParams === null) {
+							// Handle null/undefined case
 							toolParams = {};
+						} else if (typeof rawParams === 'string') {
+							// Handle string input (typical direct node usage)
+							if (!rawParams || rawParams.trim() === '') {
+								toolParams = {};
+							} else {
+								toolParams = JSON.parse(rawParams);
+							}
+						} else if (typeof rawParams === 'object') {
+							// Handle object input (when used as a tool in AI Agent)
+							toolParams = rawParams;
 						} else {
-							toolParams = JSON.parse(rawParams);
-
-							// Ensure toolParams is an object
-							if (
-								typeof toolParams !== 'object' ||
-								toolParams === null ||
-								Array.isArray(toolParams)
-							) {
+							// Try to convert other types to object
+							try {
+								toolParams = JSON.parse(JSON.stringify(rawParams));
+							} catch (parseError) {
 								throw new NodeOperationError(
 									this.getNode(),
-									'Tool parameters must be a JSON object',
+									`Invalid parameter type: ${typeof rawParams}`,
 								);
 							}
+						}
+
+						// Ensure toolParams is an object
+						if (
+							typeof toolParams !== 'object' ||
+							toolParams === null ||
+							Array.isArray(toolParams)
+						) {
+							throw new NodeOperationError(this.getNode(), 'Tool parameters must be a JSON object');
 						}
 					} catch (error) {
 						throw new NodeOperationError(

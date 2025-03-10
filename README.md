@@ -20,22 +20,33 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Credentials
 
-The MCP Client node requires credentials to connect to an MCP server:
+The MCP Client node supports two types of credentials to connect to an MCP server:
 
-![MCP Client Credentials](./assets/credentials.png)
+### Command-line Based Transport (STDIO)
+
+![MCP Client STDIO Credentials](./assets/credentials.png)
 
 - **Command**: The command to start the MCP server
 - **Arguments**: Optional arguments to pass to the server command
+- **Environment Variables**: Variables to pass to the server in NAME=VALUE format
+
+### Server-Sent Events (SSE) Transport
+
+![MCP Client SSE Credentials](./assets/sse-credentials.png)
+
+- **SSE URL**: The URL of the SSE endpoint (default: http://localhost:3001/sse)
+- **Messages Post Endpoint**: Optional custom endpoint for posting messages if different from the SSE URL
+- **Additional Headers**: Optional headers to send with requests (format: name:value, one per line)
 
 ## Environment Variables
 
-The MCP Client node supports passing environment variables to the MCP server in two ways:
+The MCP Client node supports passing environment variables to MCP servers using the command-line based transport in two ways:
 
 ### 1. Using the Credentials UI
 
 You can add environment variables directly in the credentials configuration:
 
-![Environment Variables in Credentials](./assets/credentialsEnvs.png)
+![Environment Variables in Credentials](./assets/credentials-envs.png)
 
 This method is useful for individual setups and testing. The values are stored securely as credentials in n8n.
 
@@ -80,7 +91,7 @@ This example shows how to set up and use the Brave Search MCP server:
    - Choose the "brave_search" tool
    - Set Parameters to: `{"query": "latest AI news"}`
 
-![Brave Search Example](./assets/braveSearchExample.png)
+![Brave Search Example](./assets/brave-search-example.png)
 
 The node will execute the search and return the results in the output.
 
@@ -135,7 +146,7 @@ services:
    - Configure different MCP Client nodes with different credentials
    - Create a prompt that uses multiple data sources
 
-![Multi-Server Setup](./assets/multiServerExample.png)
+![Multi-Server Setup](./assets/multi-server-example.png)
 
 Example AI Agent prompt:
 ```
@@ -145,6 +156,38 @@ Finally, find some recent news about travel restrictions for these places.
 ```
 
 With this setup, the AI agent can use multiple MCP tools across different servers, all using environment variables configured in your Docker deployment.
+
+### Example: Using a Local MCP Server with SSE
+
+This example shows how to connect to a locally running MCP server using Server-Sent Events (SSE):
+
+1. Start a local MCP server that supports SSE:
+   ```bash
+   npx @modelcontextprotocol/server-example-sse
+   ```
+
+   Or run your own custom MCP server with SSE support on port 3001.
+
+2. Configure MCP Client credentials:
+   - In the node settings, select **Connection Type**: `Server-Sent Events (SSE)`
+   - Create new credentials of type **MCP Client (SSE) API**
+   - Set **SSE URL**: `http://localhost:3001/sse`
+   - Add any required headers if your server needs authentication
+
+3. Create a workflow that uses the MCP Client node:
+   - Add an MCP Client node
+   - Set the Connection Type to `Server-Sent Events (SSE)`
+   - Select your SSE credentials
+   - Select the "List Tools" operation to see available tools
+   - Execute the workflow to see the results
+
+![SSE Example](./assets/sse-example.png)
+
+This method is particularly useful when:
+- Your MCP server is running as a standalone service
+- You're connecting to a remote MCP server
+- Your server requires special authentication headers
+- You need to separate the transport channel from the message channel
 
 ## Operations
 
@@ -161,13 +204,13 @@ The MCP Client node supports the following operations:
 
 ### Example: List Tools Operation
 
-![List Tools Example](./assets/listTools.png)
+![List Tools Example](./assets/list-tools.png)
 
 The List Tools operation returns all available tools from the MCP server, including their names, descriptions, and parameter schemas.
 
 ### Example: Execute Tool Operation
 
-![Execute Tool Example](./assets/executeTool.png)
+![Execute Tool Example](./assets/execute-tool.png)
 
 The Execute Tool operation allows you to execute a specific tool with parameters. Make sure to select the tool you want to execute from the dropdown menu.
 
@@ -204,7 +247,7 @@ export N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 
 Example of an AI Agent workflow results:
 
-![AI Agent Example](./assets/executeToolResult.png)
+![AI Agent Example](./assets/execute-tool-result.png)
 
 After setting this environment variable and restarting n8n, your MCP Client node will be available as a tool in AI Agent nodes.
 
@@ -212,20 +255,15 @@ After setting this environment variable and restarting n8n, your MCP Client node
 
 - Requires n8n version 1.0.0 or later
 - Compatible with MCP Protocol version 1.0.0 or later
+- Supports both STDIO and SSE transports for connecting to MCP servers
+- SSE transport requires a server that implements the MCP Server-Sent Events specification
 
 ## Resources
 
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
-* [Model Context Protocol Documentation](https://github.com/modelcontextprotocol/typescript-sdk)
+* [Model Context Protocol Documentation](https://modelcontextprotocol.io/docs/)
 * [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-
-## Note for Development
-
-The README references several image assets that should be created:
-- `assets/env-variables.png` - Screenshot of the environment variables UI in credentials
-- `assets/brave-search-example.png` - Screenshot of a workflow using Brave Search
-- `assets/multi-server-example.png` - Screenshot of a workflow using multiple MCP servers
-
-Please create these screenshots to complete the documentation.
+* [MCP Transports Overview](https://modelcontextprotocol.io/docs/concepts/transports)
+* [Using SSE in MCP](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/client/sse.ts)
 
 
