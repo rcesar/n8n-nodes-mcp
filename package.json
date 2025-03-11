@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-mcp",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"description": "MCP nodes for n8n ",
 	"keywords": [
 		"n8n-community-node-package"
@@ -35,8 +35,7 @@
 			"dist/credentials/McpClientSseApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/McpClient/McpClient.node.js",
-			"dist/nodes/McpClient/McpClientTool.node.js"
+			"dist/nodes/McpClient/McpClient.node.js"
 		]
 	},
 	"devDependencies": {
