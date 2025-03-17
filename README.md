@@ -10,13 +10,32 @@ MCP is a protocol that enables AI models to interact with external tools and dat
 [Credentials](#credentials)  
 [Environment Variables](#environment-variables)  
 [Operations](#operations)  
-[Using as a Tool](#using-as-a-tool)  
+[Using as a Tool](#using-as-a-tool) [ 
 [Compatibility](#compatibility)  
 [Resources](#resources)  
+
+## Getting Started
+
+Official Quickstart Video:
+
+[![MCP Client Node Quickstart](https://i9.ytimg.com/vi/1t8DQL-jUJk/sddefault.jpg?v=67d2de2b&sqp=CMDx3b4G&rs=AOn4CLChBxeGtB329CY9pJKEQKZlDaxAvg)](https://youtu.be/1t8DQL-jUJk)
+
+### Community Videos
+
+Shoutout to all the creators of the following n8n community videos that are great resources for learning how to use this node:
+
+- [Is MCP the Future of N8N AI Agents? (Fully Tested!)](https://youtu.be/sb5hCcFYPIE)
+- [Connect N8N AI Agents to EVERYTHING using MCP?](https://youtu.be/tTDRgkD-120)
+- [Build an AI Agent That Can Use Any Tool (MCP in n8n Tutorial)](https://youtu.be/pqYQwyxfx44)
+- [The NEW N8N MCP is an Absolute Game-Changer (Brave Search MCP)](https://youtu.be/RxXS_FpJyGM)
+
+If you have a great video that you'd like to share, please let me know and I'll add it to the list!
 
 ## Installation
 
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+
+Also pay attention to Environment Variables for [using tools in AI Agents](#using-as-a-tool). It's mandatory to set the `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE` environment variable to `true` if you want to use the MCP Client node as a tool in AI Agents.
 
 ## Credentials
 

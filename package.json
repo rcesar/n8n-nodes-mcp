@@ -3,7 +3,13 @@
 	"version": "0.1.10",
 	"description": "MCP nodes for n8n ",
 	"keywords": [
-		"n8n-community-node-package"
+		"n8n-community-node-package",
+		"mcp",
+		"mcp-client",
+		"mcp-client-node",
+		"mcp-client-n8n",
+		"mcp-client-n8n-node",
+		"mcp-client-n8n-node-package"
 	],
 	"license": "MIT",
 	"homepage": "",
