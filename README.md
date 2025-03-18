@@ -18,7 +18,7 @@ MCP is a protocol that enables AI models to interact with external tools and dat
 
 Official Quickstart Video:
 
-[![MCP Client Node Quickstart](https://i9.ytimg.com/vi/1t8DQL-jUJk/sddefault.jpg?v=67d2de2b&sqp=CMDx3b4G&rs=AOn4CLChBxeGtB329CY9pJKEQKZlDaxAvg)](https://youtu.be/1t8DQL-jUJk)
+[![MCP Client Node Quickstart](/assets/mcp-n8n.png)](https://youtu.be/1t8DQL-jUJk)
 
 ### Community Videos
 
@@ -28,8 +28,14 @@ Shoutout to all the creators of the following n8n community videos that are grea
 - [Connect N8N AI Agents to EVERYTHING using MCP?](https://youtu.be/tTDRgkD-120)
 - [Build an AI Agent That Can Use Any Tool (MCP in n8n Tutorial)](https://youtu.be/pqYQwyxfx44)
 - [The NEW N8N MCP is an Absolute Game-Changer (Brave Search MCP)](https://youtu.be/RxXS_FpJyGM)
+- [MCP & n8n Automation: The Ultimate Guide for MCP AI Agents (2025)](https://www.youtube.com/watch?v=mbQsnrxHPwE)
+- [REVOLUÇÃO na criação de AGENTES no N8N com o MCP Server!!!](https://www.youtube.com/watch?v=zgH85dJcs5c) (Portuguese)
 
 If you have a great video that you'd like to share, please let me know and I'll add it to the list!
+
+#### Interested a deeper dive into MCP?
+
+Check out my YouTube Series [MCP Explained](https://www.youtube.com/playlist?list=PLjOCx_PNfJ4S_oOSqrMi6t9_x1GllvQZO) for more information about the Model Context Protocol.
 
 ## Installation
 
